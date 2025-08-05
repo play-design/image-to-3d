@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Playdesign - 3DGen</title>
+    <title>PlayDesign - 3DGen</title>
     <link rel="stylesheet" href="styles.css" />
     <script
       type="module"
@@ -16,16 +16,56 @@
       <img src="https://playdesign.com/wp-content/themes/playdesign/assets/img/nav/logo.svg"  alt="Playdesign Logo" />
     </header>
     <section class="container">
-      <model-viewer
-        alt="Neil Armstrong's Spacesuit from the Smithsonian Digitization Programs Office and National Air and Space Museum"
-        src="https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb"
-        ar
-        environment-image="https://modelviewer.dev/shared-assets/environments/moon_1k.hdr"
-        poster="https://modelviewer.dev/shared-assets/models/NeilArmstrong.webp"
-        shadow-intensity="1"
-        camera-controls
-        touch-action="pan-y"
-      ></model-viewer>
+      <div class="row">
+        <section class="input">
+          <header>
+            <h1>Image source</h1>
+          </header>
+          <label for="imageInput">Source image URL</label>
+          <input type="text" id="imageInput" placeholder="Enter image URL" />
+          <div class="image-preview-container">
+            <img id="preview" alt="Image preview" style="display: none; max-width: 100%; height: auto; margin-top: 10px;" />
+          </div>
+          
+          <div class="generation-controls">
+              
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="generateTextures" />
+                <span class="checkmark"></span>
+                Generate textures
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="removeBackground" checked />
+                <span class="checkmark"></span>
+                Remove background
+              </label>
+            </div>
+          
+            
+            <button id="generateBtn" class="generate-btn">Generate 3D Model</button>
+            
+            <div id="status" class="status-message" style="display: none;"></div>
+          </div>
+        </section>
+        <section class="output">
+          <header>
+            <h1>3D Result</h1>
+          </header>
+          <div id="modelContainer">
+            <model-viewer
+              id="modelViewer"
+              alt="Generated 3D Model"
+              src="https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb"
+              shadow-intensity="1"
+              camera-controls
+              touch-action="pan-y"
+              loading="lazy"
+            ></model-viewer>
+          </div>
+         
+        </section>
+      </div>
     </section>
   </body>
 </html>
