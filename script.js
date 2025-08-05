@@ -407,7 +407,7 @@
 
       // Handle success
       if (result.output && result.output.length > 0) {
-        const modelUrl = result.output[0];
+        const modelUrl =  result.output.pop();
         updateModelViewer(modelUrl);
         updateStatus("3D model generated successfully!", "success");
       } else {
