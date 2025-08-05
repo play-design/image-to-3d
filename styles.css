@@ -1,0 +1,33 @@
+:root {
+  --primary: #fff;
+  --secondary: #ff7a59;
+  --background: #435d6d;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background);
+  color: var(--primary);
+}
+
+.app-bar {
+  height: 4rem;
+  background-color: var(--primary);
+  display: flex;
+  align-items: center;
+
+  > img {
+    padding: 1rem;
+    height: 2rem;
+  }
+}
+
+.container {
+  background-color: var(--background);
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0 ;
+}
