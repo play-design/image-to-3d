@@ -87,11 +87,12 @@
   "use strict";
 
   /**
-   * Show image preview from URL
-   * @param {string} imageUrl - The URL of the image to preview
+   * Show image preview from file
+   * @param {File} imageFile - The file to preview
    */
-  function showImagePreview(imageUrl) {
+  function showImagePreview(imageFile) {
     const previewImg = document.getElementById("preview");
+    const fileDropHint = document.getElementById("fileDropHint");
 
     if (!previewImg) {
       console.error("Preview image element not found");
@@ -104,37 +105,47 @@
     previewImg.onerror = null;
     previewImg.onload = null;
 
-    // Validate URL
-    if (!imageUrl || imageUrl.trim().length === 0) {
+    // Show hint if no file
+    if (fileDropHint) {
+      fileDropHint.style.display = "block";
+    }
+
+    // Validate file
+    if (!imageFile || !(imageFile instanceof File)) {
       return;
     }
 
-    const trimmedUrl = imageUrl.trim();
-
-    // Basic URL validation
-    try {
-      new URL(trimmedUrl);
-    } catch (error) {
-      console.warn("Invalid URL provided:", trimmedUrl);
+    // Check if file is an image
+    if (!imageFile.type.startsWith('image/')) {
+      console.warn("Selected file is not an image:", imageFile.type);
       return;
     }
 
-    // Set up error handling
-    previewImg.onerror = function () {
-      console.error("Failed to load image:", trimmedUrl);
+    // Create FileReader to read the file
+    const reader = new FileReader();
+
+    reader.onerror = function () {
+      console.error("Failed to read image file:", imageFile.name);
       previewImg.style.display = "none";
       previewImg.alt = "Failed to load image";
+      if (fileDropHint) {
+        fileDropHint.style.display = "block";
+      }
     };
 
-    // Set up success handling
-    previewImg.onload = function () {
-      console.log("Image loaded successfully:", trimmedUrl);
+    reader.onload = function (e) {
+      console.log("Image file loaded successfully:", imageFile.name);
+      previewImg.src = e.target.result;
       previewImg.style.display = "block";
       previewImg.alt = "Image preview";
+      // Hide hint when image is loaded
+      if (fileDropHint) {
+        fileDropHint.style.display = "none";
+      }
     };
-
-    // Set the image source
-    previewImg.src = trimmedUrl;
+    
+    // Read the file as data URL
+    reader.readAsDataURL(imageFile);
   }
 
   /**
@@ -143,48 +154,71 @@
   function initializeImagePreview() {
     const imageInput = document.getElementById("imageInput");
     const previewImg = document.getElementById("preview");
+    const fileDropHint = document.getElementById("fileDropHint");
 
     if (!imageInput) {
       console.error("Image input element not found");
       return;
     }
 
-    // Clear input and preview on page load/refresh
-    imageInput.value = "";
+    // Clear preview on page load/refresh and show hint
     if (previewImg) {
       previewImg.style.display = "none";
       previewImg.src = "";
       previewImg.alt = "Image preview";
     }
+    if (fileDropHint) {
+      fileDropHint.style.display = "block";
+    }
 
-    // Handle input changes with debouncing
-    let debounceTimer;
-
-    imageInput.addEventListener("input", function (event) {
-      clearTimeout(debounceTimer);
-
-      debounceTimer = setTimeout(() => {
-        const imageUrl = event.target.value;
-        showImagePreview(imageUrl);
-      }, 500); // 500ms debounce
-    });
-
-    // Handle paste events
-    imageInput.addEventListener("paste", function (event) {
-      setTimeout(() => {
-        const imageUrl = event.target.value;
-        showImagePreview(imageUrl);
-      }, 100);
-    });
-
-    // Handle Enter key
-    imageInput.addEventListener("keypress", function (event) {
-      if (event.key === "Enter") {
-        clearTimeout(debounceTimer);
-        const imageUrl = event.target.value;
-        showImagePreview(imageUrl);
+    // Handle file input changes
+    imageInput.addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        showImagePreview(file);
+      } else {
+        // Clear preview if no file selected and show hint
+        if (previewImg) {
+          previewImg.style.display = "none";
+          previewImg.src = "";
+          previewImg.alt = "Image preview";
+        }
+        if (fileDropHint) {
+          fileDropHint.style.display = "block";
+        }
       }
     });
+
+    // Handle drag and drop
+    const container = imageInput.parentElement;
+    if (container) {
+      container.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        container.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+        container.style.borderColor = 'var(--secondary)';
+      });
+
+      container.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        container.style.backgroundColor = '';
+        container.style.borderColor = '';
+      });
+
+      container.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        container.style.backgroundColor = '';
+        container.style.borderColor = '';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+          imageInput.files = files;
+          showImagePreview(files[0]);
+        }
+      });
+    }
   }
 
   // Initialize when DOM is ready
@@ -212,6 +246,40 @@
 
   const SYNEXA_API_BASE = "https://api.synexa.ai";
   const HUNYUAN3D_MODEL = "tencent/hunyuan3d-2";
+
+  /**
+   * Upload image file to the upload endpoint
+   * @param {File} file - The file to upload
+   * @returns {Promise<string>} The uploaded file URL
+   */
+  async function uploadImageFile(file) {
+    if (!file || !(file instanceof File)) {
+      throw new Error('Invalid file provided');
+    }
+
+    // Create FormData for multipart upload
+    const formData = new FormData();
+    formData.append('file-data', file);
+
+    const response = await fetch('https://voxbox-pl.nonprod.voxteam.pl/api/tools/files/image-to-3d', {
+      method: 'POST',
+      body: formData,
+      // Note: Don't set Content-Type header manually for FormData, let the browser set it
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Failed to upload image: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+    }
+
+    const result = await response.json();
+    
+    if (!result.url) {
+      throw new Error('Upload response did not contain a URL');
+    }
+
+    return result.url;
+  }
 
   /**
    * Generate 3D model using Hunyuan3D-2 API
@@ -376,9 +444,15 @@
       document.getElementById("removeBackground");
 
     // Validate inputs
-    const imageUrl = imageInput?.value?.trim();
-    if (!imageUrl) {
-      updateStatus("Please enter an image URL", "error");
+    const selectedFile = imageInput?.files?.[0];
+    if (!selectedFile) {
+      updateStatus("Please select an image file", "error");
+      return;
+    }
+
+    // Check if file is an image
+    if (!selectedFile.type.startsWith('image/')) {
+      updateStatus("Please select a valid image file", "error");
       return;
     }
 
@@ -389,6 +463,11 @@
     }
 
     try {
+      updateStatus("Uploading image...", "loading");
+
+      // Upload file and get URL
+      const imageUrl = await uploadImageFile(selectedFile);
+      
       updateStatus("Starting 3D generation...", "loading");
 
       // Prepare parameters
@@ -458,10 +537,12 @@
   if (window.ImageTo3D) {
     window.ImageTo3D.generate3DModel = generate3DModel;
     window.ImageTo3D.handleGeneration = handleGeneration;
+    window.ImageTo3D.uploadImageFile = uploadImageFile;
   } else {
     window.ImageTo3D = {
       generate3DModel,
       handleGeneration,
+      uploadImageFile,
     };
   }
 })();
