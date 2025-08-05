@@ -220,9 +220,11 @@
    */
   async function generate3DModel(params) {
     const apiKey = window.ImageTo3D.getStoredApiKey();
-    
+
     if (!apiKey) {
-      throw new Error("API key not found. Please add your Synexa API key to the URL: ?apiKey=your-key");
+      throw new Error(
+        "API key not found. Please add your Synexa API key to the URL: ?apiKey=your-key"
+      );
     }
 
     // Validate required parameters
@@ -232,28 +234,36 @@
 
     // Prepare the request payload
     const payload = {
+      model: HUNYUAN3D_MODEL,
       input: {
         image: params.imageUrl,
         shape_only: !params.generateTextures,
         check_box_rembg: params.removeBackground !== false,
+        caption: "",
         steps: 5,
         octree_resolution: "256",
         guidance_scale: 5.5,
-      }
+      },
     };
 
-    const response = await fetch(`${SYNEXA_API_BASE}/v1/models/${HUNYUAN3D_MODEL}/predictions`, {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload)
-    });
+    const response = await fetch(
+      `${SYNEXA_API_BASE}/v1/predictions`,
+      {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        errorData.message ||
+          `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
@@ -266,34 +276,40 @@
    */
   async function pollPredictionResult(predictionId) {
     const apiKey = window.ImageTo3D.getStoredApiKey();
-    
+
     const maxAttempts = 120; // 10 minutes max (5s intervals)
     let attempts = 0;
 
     while (attempts < maxAttempts) {
-      const response = await fetch(`${SYNEXA_API_BASE}/v1/predictions/${predictionId}`, {
-        headers: {
-          "x-api-key": apiKey,
+      const response = await fetch(
+        `${SYNEXA_API_BASE}/v1/predictions/${predictionId}`,
+        {
+          headers: {
+            "x-api-key": apiKey,
+          },
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to get prediction status: ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       if (result.status === "succeeded") {
         return result;
       } else if (result.status === "failed") {
         throw new Error(result.error || "Model generation failed");
       }
-      
+
       // Update status
-      updateStatus(`Generating... (${Math.round((attempts / maxAttempts) * 100)}%)`, "loading");
-      
+      updateStatus(
+        `Generating... (${Math.round((attempts / maxAttempts) * 100)}%)`,
+        "loading"
+      );
+
       // Wait 5 seconds before next poll
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       attempts++;
     }
 
@@ -308,13 +324,13 @@
   function updateStatus(message, type = "loading") {
     const statusEl = document.getElementById("status");
     const modelStatusEl = document.getElementById("modelStatus");
-    
+
     if (statusEl) {
       statusEl.textContent = message;
       statusEl.className = `status-message ${type}`;
       statusEl.style.display = "block";
     }
-    
+
     if (modelStatusEl) {
       modelStatusEl.textContent = message;
     }
@@ -329,7 +345,7 @@
     const modelPlaceholder = document.getElementById("modelPlaceholder");
     const downloadBtn = document.getElementById("downloadBtn");
     const downloadSection = document.getElementById("downloadSection");
-    
+
     if (modelViewer && modelPlaceholder) {
       // Hide placeholder and show model viewer
       modelPlaceholder.style.display = "none";
@@ -337,7 +353,7 @@
       modelViewer.src = modelUrl;
       modelViewer.alt = "Generated 3D Model";
     }
-    
+
     if (downloadBtn && downloadSection) {
       downloadBtn.onclick = () => {
         const link = document.createElement("a");
@@ -356,7 +372,8 @@
     const generateBtn = document.getElementById("generateBtn");
     const imageInput = document.getElementById("imageInput");
     const generateTextureCheckbox = document.getElementById("generateTextures");
-    const removeBackgroundCheckbox = document.getElementById("removeBackground");
+    const removeBackgroundCheckbox =
+      document.getElementById("removeBackground");
 
     // Validate inputs
     const imageUrl = imageInput?.value?.trim();
@@ -387,7 +404,7 @@
 
       // Poll for result
       const result = await pollPredictionResult(prediction.id);
-      
+
       // Handle success
       if (result.output && result.output.length > 0) {
         const modelUrl = result.output[0];
@@ -396,7 +413,6 @@
       } else {
         throw new Error("No model output received");
       }
-
     } catch (error) {
       console.error("Generation error:", error);
       updateStatus(`Error: ${error.message}`, "error");
@@ -414,15 +430,18 @@
    */
   function initialize3DGeneration() {
     const generateBtn = document.getElementById("generateBtn");
-    
+
     if (generateBtn) {
       generateBtn.addEventListener("click", handleGeneration);
     }
-    
+
     // Check for API key on load
     const apiKey = window.ImageTo3D?.getStoredApiKey();
     if (!apiKey) {
-      updateStatus("API key required. Add ?apiKey=your-key to the URL", "error");
+      updateStatus(
+        "API key required. Add ?apiKey=your-key to the URL",
+        "error"
+      );
     } else {
       updateStatus("Ready to generate your 3D model", "success");
     }
