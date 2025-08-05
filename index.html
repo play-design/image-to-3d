@@ -19,7 +19,7 @@
       <div class="row">
         <section class="input">
           <header>
-            <h1>Image source</h1>
+            <h1>2D Image</h1>
           </header>
           <label for="imageInput">Source image URL</label>
           <input type="text" id="imageInput" placeholder="Enter image URL" />
@@ -55,13 +55,19 @@
           <div id="modelContainer">
             <model-viewer
               id="modelViewer"
-              alt="Generated 3D Model"
-              src="https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb"
+              alt="3D Model will appear here"
               shadow-intensity="1"
               camera-controls
               touch-action="pan-y"
               loading="lazy"
+              style="display: none;"
             ></model-viewer>
+            <div id="modelPlaceholder" class="model-placeholder">
+              <div class="placeholder-content">
+                <h3>No 3D model generated yet</h3>
+                <p>Upload an image and click "Generate 3D Model" to see your 3D result here.</p>
+              </div>
+            </div>
           </div>
          
         </section>

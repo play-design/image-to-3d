@@ -142,10 +142,19 @@
    */
   function initializeImagePreview() {
     const imageInput = document.getElementById("imageInput");
+    const previewImg = document.getElementById("preview");
 
     if (!imageInput) {
       console.error("Image input element not found");
       return;
+    }
+
+    // Clear input and preview on page load/refresh
+    imageInput.value = "";
+    if (previewImg) {
+      previewImg.style.display = "none";
+      previewImg.src = "";
+      previewImg.alt = "Image preview";
     }
 
     // Handle input changes with debouncing
@@ -317,10 +326,14 @@
    */
   function updateModelViewer(modelUrl) {
     const modelViewer = document.getElementById("modelViewer");
+    const modelPlaceholder = document.getElementById("modelPlaceholder");
     const downloadBtn = document.getElementById("downloadBtn");
     const downloadSection = document.getElementById("downloadSection");
     
-    if (modelViewer) {
+    if (modelViewer && modelPlaceholder) {
+      // Hide placeholder and show model viewer
+      modelPlaceholder.style.display = "none";
+      modelViewer.style.display = "block";
       modelViewer.src = modelUrl;
       modelViewer.alt = "Generated 3D Model";
     }
